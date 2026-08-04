@@ -42,6 +42,32 @@ Aplicación para crear tiendas online de afiliación Amazon con ganancias recurr
 
 ## Instalación
 
+### Opción 1 · Linux (.deb) — recomendada
+
+Descarga el paquete en la **release** de GitHub: https://github.com/JMBermejias/DeCasa/releases
+
+```bash
+sudo dpkg -i decasa_1.0.0_amd64.deb
+decasa          # abre la app en el navegador
+decasa start    # inicia el servidor
+decasa stop     # lo detiene
+decasa status   # estado
+```
+
+El paquete es **autónomo** (incluye el runtime de Node.js), inicia el servidor en `http://localhost:4000`,
+se lanza al iniciar sesión y también puede ejecutarse como servicio de usuario:
+
+```bash
+systemctl --user enable --now decasa
+```
+
+### Opción 2 · Android (.apk)
+
+Descarga `DeCasa.apk` de la release e instálalo en tu móvil. La app abre el panel de DeCasa y permite
+configurar la URL de tu servidor (local o remoto).
+
+### Opción 3 · Código fuente (cualquier plataforma: Windows, macOS, Linux)
+
 ```bash
 cd DeCasa
 
@@ -58,6 +84,13 @@ npm start
 - **Servidor API**: `http://localhost:4000`
 - **Frontend (desarrollo)**: `http://localhost:5173` (proxy automático al servidor en 4000)
 - **App completa**: `http://localhost:4000` (una vez compilado)
+
+### Reconstruir los paquetes
+
+```bash
+./build/deb/build-deb.sh                      # genera dist/deb/decasa_*.deb
+./build/android/build-apk.sh                  # genera el .apk firmado
+```
 
 ## Modo demostración
 

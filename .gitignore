@@ -4,3 +4,5 @@ dist/
 .DS_Store
 server/data/
 .env
+build/android/app/build/
+build/android/out/

@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(__dirname, '..', 'server', 'data');
+const dataDir = process.env.DECASA_DATA_DIR || path.join(__dirname, '..', 'server', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 export const db = new Database(path.join(dataDir, 'decasa.db'));
