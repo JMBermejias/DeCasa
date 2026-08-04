@@ -6,3 +6,4 @@ server/data/
 .env
 build/android/app/build/
 build/android/out/
+build/android/*.keystore
