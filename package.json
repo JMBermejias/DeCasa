@@ -1,0 +1,23 @@
+{
+  "name": "decasa-affiliate",
+  "version": "1.0.0",
+  "description": "DeCasa - Creador de tiendas online de afiliación de Amazon con ganancias recurrentes",
+  "main": "server/index.js",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently -n servidor,cliente -c blue,cyan \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client",
+    "start": "npm run build && node server/index.js"
+  },
+  "keywords": [
+    "amazon",
+    "afiliado",
+    "tienda",
+    "afiliados",
+    "ecommerce"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
