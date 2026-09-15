@@ -4,8 +4,10 @@ set -e
 cd "$(dirname "$0")"
 
 PORT="${DECASA_PORT:-4000}"
-LOG="$PWD/server.log"
-PID_FILE="$PWD/.decasa.pid"
+export DECASA_DATA_DIR="${DECASA_DATA_DIR:-$HOME/.local/share/decasa}"
+mkdir -p "$DECASA_DATA_DIR"
+LOG="$DECASA_DATA_DIR/server.log"
+PID_FILE="$DECASA_DATA_DIR/decasa.pid"
 
 command -v node >/dev/null 2>&1 || { echo "Node.js no encontrado. Instálalo o usa el paquete .deb."; exit 1; }
 

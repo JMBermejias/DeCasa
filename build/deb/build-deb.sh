@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-VERSION="${VERSION:-1.0.0}"
+VERSION="${VERSION:-1.0.1}"
 PKG="decasa"
 ARCH="amd64"
 STAGE="$ROOT/dist/deb/${PKG}_${VERSION}_${ARCH}"
@@ -56,25 +56,33 @@ Description: DeCasa - creador de tiendas online de afiliacion Amazon
  Instalacion autonoma (incluye runtime de Node.js).
 EOF
 
-cat > "$STAGE/DEBIAN/postinst" <<'EOF'
+cat > "$STAGE/DEBIAN/postinst" <<'POSTINST'
 #!/bin/sh
 set -e
 chmod 755 /opt/decasa/runtime/node
 chmod 755 /usr/bin/decasa
 update-desktop-database /usr/share/applications 2>/dev/null || true
+# Crear directorio de datos para el usuario que ejecuta postinst
+DATA_DIR="${DECASA_DATA_DIR:-$HOME/.local/share/decasa}"
+mkdir -p "$DATA_DIR" 2>/dev/null || true
+# Activar servicio systemd user si está disponible
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl --user daemon-reload 2>/dev/null || true
+fi
 exit 0
-EOF
+POSTINST
 chmod 755 "$STAGE/DEBIAN/postinst"
 
 cat > "$STAGE/usr/bin/decasa" <<'EOF'
 #!/usr/bin/env bash
 # DeCasa - lanzador
-DATA_DIR="${DECASA_DATA_DIR:-$HOME/.local/share/decasa}"
+export DECASA_DATA_DIR="${DECASA_DATA_DIR:-$HOME/.local/share/decasa}"
 export PORT="${DECASA_PORT:-4000}"
 RUNTIME=/opt/decasa/runtime/node
 SERVER=/opt/decasa/server/index.js
-PID_FILE="$DATA_DIR/decasa.pid"
-mkdir -p "$DATA_DIR"
+PID_FILE="$DECASA_DATA_DIR/decasa.pid"
+LOG_FILE="$DECASA_DATA_DIR/decasa.log"
+mkdir -p "$DECASA_DATA_DIR"
 
 is_running() {
   [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
@@ -84,12 +92,21 @@ cmd="${1:-open}"
 case "$cmd" in
   start)
     if is_running; then echo "DeCasa ya está en marcha (PID $(cat "$PID_FILE")) en http://localhost:$PORT"; exit 0; fi
-    nohup "$RUNTIME" "$SERVER" >> "$DATA_DIR/decasa.log" 2>&1 &
+    nohup "$RUNTIME" "$SERVER" >> "$LOG_FILE" 2>&1 &
     echo $! > "$PID_FILE"
-    for _ in $(seq 1 30); do
-      "$RUNTIME" -e "fetch('http://127.0.0.1:$PORT/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" 2>/dev/null && break
-      sleep 0.3
+    READY=0
+    for _ in $(seq 1 40); do
+      if "$RUNTIME" -e "fetch('http://127.0.0.1:$PORT/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" 2>/dev/null; then
+        READY=1; break
+      fi
+      sleep 0.5
     done
+    if [ "$READY" = "0" ]; then
+      echo "ERROR: El servidor no arrancó. Revisa el log: $LOG_FILE" >&2
+      tail -5 "$LOG_FILE" >&2 2>/dev/null
+      rm -f "$PID_FILE"
+      exit 1
+    fi
     echo "DeCasa iniciado en http://localhost:$PORT"
     ;;
   stop)
@@ -150,6 +167,7 @@ After=network.target
 [Service]
 Type=simple
 Environment=DECASA_DATA_DIR=%h/.local/share/decasa
+Environment=PORT=4000
 ExecStart=/opt/decasa/runtime/node /opt/decasa/server/index.js
 Restart=on-failure
 RestartSec=3

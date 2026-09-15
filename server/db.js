@@ -1,10 +1,11 @@
 import Database from 'better-sqlite3';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = process.env.DECASA_DATA_DIR || path.join(__dirname, '..', 'server', 'data');
+const dataDir = process.env.DECASA_DATA_DIR || path.join(os.homedir(), '.local', 'share', 'decasa');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 export const db = new Database(path.join(dataDir, 'decasa.db'));

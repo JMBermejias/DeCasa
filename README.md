@@ -47,7 +47,7 @@ Aplicación para crear tiendas online de afiliación Amazon con ganancias recurr
 Descarga el paquete en la **release** de GitHub: https://github.com/JMBermejias/DeCasa/releases
 
 ```bash
-sudo dpkg -i decasa_1.0.0_amd64.deb
+sudo dpkg -i decasa_1.0.1_amd64.deb
 decasa          # abre la app en el navegador
 decasa start    # inicia el servidor
 decasa stop     # lo detiene
@@ -60,6 +60,9 @@ se lanza al iniciar sesión y también puede ejecutarse como servicio de usuario
 ```bash
 systemctl --user enable --now decasa
 ```
+
+Los datos (base de datos SQLite y logs) se guardan en `~/.local/share/decasa/` y pueden
+reubicarse con la variable de entorno `DECASA_DATA_DIR`.
 
 ### Opción 2 · Android (.apk)
 
@@ -92,6 +95,8 @@ npm start
 ./build/android/build-apk.sh                  # genera el .apk firmado
 ```
 
+> En entornos sin `dpkg-deb` también puedes usar `python3 build/build-deb-py.py`.
+
 ## Modo demostración
 
 Por defecto, la aplicación funciona en modo demostración. Busca productos de ejemplo con
@@ -102,7 +107,7 @@ reseñas simuladas. Para usar productos reales de Amazon, introduce tus credenci
 
 - **Backend**: Node.js, Express, better-sqlite3
 - **Frontend**: React 18, React Router 6, Recharts, Vite
-- **Base de datos**: SQLite (archivos en `server/data/`)
+- **Base de datos**: SQLite (archivos en `~/.local/share/decasa/` o `$DECASA_DATA_DIR`)
 - **Integración Amazon**: PA-API 5 con firma AWS Signature Version 4
 
 ## Licencia
