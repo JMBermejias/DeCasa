@@ -57,7 +57,13 @@ export const api = {
   addClicks: (body) => request('/clicks', { method: 'POST', body: JSON.stringify(body) }),
 
   getSettings: () => request('/settings'),
-  saveSettings: (section, values) => request('/settings', { method: 'PUT', body: JSON.stringify({ section, ...values }) })
+  saveSettings: (section, values) => request('/settings', { method: 'PUT', body: JSON.stringify({ section, ...values }) }),
+
+  getPublishConfig: (storeId) => request(`/stores/${storeId}/publish-config`),
+  savePublishConfig: (storeId, cfg) => request(`/stores/${storeId}/publish-config`, { method: 'PUT', body: JSON.stringify(cfg) }),
+  testPublish: (storeId) => request(`/stores/${storeId}/publish-test`, { method: 'POST', body: JSON.stringify({}) }),
+  publishStore: (storeId) => request(`/stores/${storeId}/publish`, { method: 'POST', body: JSON.stringify({}) }),
+  publishPreviewUrl: (storeId) => `/api/stores/${storeId}/publish-preview`
 };
 
 export const money = (v, currency = 'EUR') =>

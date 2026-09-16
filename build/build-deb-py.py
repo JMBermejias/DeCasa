@@ -3,7 +3,7 @@
 import io, os, tarfile, time, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-VERSION = os.environ.get('VERSION', '1.0.1')
+VERSION = os.environ.get('VERSION', '1.1.0')
 PKG = 'decasa'
 ARCH = 'amd64'
 OUT = os.path.join(ROOT, 'dist', 'deb', f'{PKG}_{VERSION}_{ARCH}.deb')
@@ -191,7 +191,7 @@ def build_data_tar():
     add_real_file_to_tar(t, 'opt/decasa/runtime/node', RUNTIME_NODE, 0o755)
 
     # Server files
-    for fname in ['index.js', 'db.js']:
+    for fname in ['index.js', 'db.js', 'publish.js']:
         add_real_file_to_tar(t, f'opt/decasa/server/{fname}', os.path.join(ROOT, 'server', fname), 0o644)
     add_real_file_to_tar(t, 'opt/decasa/server/services/amazon.js',
                          os.path.join(ROOT, 'server', 'services', 'amazon.js'), 0o644)

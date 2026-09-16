@@ -20,6 +20,10 @@ Aplicación para crear tiendas online de afiliación Amazon con ganancias recurr
 - Crear múltiples tiendas con nombres y slugs diferentes
 - Modo **automático** o **manual**
 - **Botón "Subir / Actualizar"**: publica productos en tu tienda de forma totalmente automática
+- **Publicación en una web real** (botón "📤 Publicar en web real"): sube tu tienda, como página web estática, a tu hosting o servidor vía **FTP, FTPS o SFTP** (formulario de configuración con host, puerto, usuario, contraseña, protocolo y ruta remota)
+  - Cada pulso del botón vuelve a generar y subir la web con los productos más nuevos
+  - Incluye botón de **"Probar conexión"** en el panel de configuración
+  - Muestras una **vista previa estática** de lo que se subirá a internet
 - Definición de formato de tienda (cuadrícula, lista, carrusel, mosaico)
 - Vistas públicas de tienda en `localhost:4000/tienda/<slug>`
 
@@ -47,7 +51,7 @@ Aplicación para crear tiendas online de afiliación Amazon con ganancias recurr
 Descarga el paquete en la **release** de GitHub: https://github.com/JMBermejias/DeCasa/releases
 
 ```bash
-sudo dpkg -i decasa_1.0.1_amd64.deb
+sudo dpkg -i decasa_1.1.0_amd64.deb
 decasa          # abre la app en el navegador
 decasa start    # inicia el servidor
 decasa stop     # lo detiene

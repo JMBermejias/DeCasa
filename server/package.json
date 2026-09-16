@@ -1,6 +1,6 @@
 {
   "name": "decasa-server",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "main": "index.js",
@@ -8,8 +8,10 @@
     "dev": "node index.js"
   },
   "dependencies": {
+    "basic-ftp": "^6.2.1",
     "better-sqlite3": "^11.7.0",
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "ssh2-sftp-client": "^12.1.1"
   }
 }

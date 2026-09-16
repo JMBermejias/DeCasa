@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-VERSION="${VERSION:-1.0.1}"
+VERSION="${VERSION:-1.1.0}"
 PKG="decasa"
 ARCH="amd64"
 STAGE="$ROOT/dist/deb/${PKG}_${VERSION}_${ARCH}"
@@ -29,7 +29,7 @@ cp "$RUNTIME_NODE" "$STAGE/opt/decasa/runtime/node"
 chmod 755 "$STAGE/opt/decasa/runtime/node"
 
 echo "==> Copiando servidor..."
-cp "$ROOT/server/index.js" "$ROOT/server/db.js" "$STAGE/opt/decasa/server/"
+cp "$ROOT/server/index.js" "$ROOT/server/db.js" "$ROOT/server/publish.js" "$STAGE/opt/decasa/server/"
 cp "$ROOT/server/services/amazon.js" "$STAGE/opt/decasa/server/services/"
 
 echo "==> Instalando dependencias de producción del servidor..."

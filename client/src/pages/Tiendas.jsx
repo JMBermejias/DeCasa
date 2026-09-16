@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import StoreFormatModal from '../components/StoreFormatModal.jsx';
+import PublishConfigModal from '../components/PublishConfigModal.jsx';
 
 export default function Tiendas() {
   const [stores, setStores] = useState([]);
   const [showNew, setShowNew] = useState(false);
   const [showFormat, setShowFormat] = useState(null);
+  const [showPublish, setShowPublish] = useState(null);
   const [format, setFormat] = useState(null);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [toast, setToast] = useState(null);
   const [busy, setBusy] = useState(null);
+  const [publishBusy, setPublishBusy] = useState(null);
 
   const notify = (msg, type = 'ok') => {
     setToast({ msg, type });
@@ -79,6 +82,18 @@ export default function Tiendas() {
     notify('Tienda eliminada');
   };
 
+  const publishWeb = async (s) => {
+    setPublishBusy(s.id);
+    try {
+      const res = await api.publishStore(s.id);
+      notify(res.message || 'Tienda publicada en la web');
+    } catch (err) {
+      notify(err.message, 'err');
+    } finally {
+      setPublishBusy(null);
+    }
+  };
+
   const applyFormat = async (fmt) => {
     await api.saveSettings('store_format', fmt);
     setFormat(fmt);
@@ -139,9 +154,21 @@ export default function Tiendas() {
               )}
             </div>
 
+            <div className="row" style={{ gap: 8 }}>
+              <button className="btn btn-green grow" disabled={publishBusy === s.id} onClick={() => publishWeb(s)}>
+                {publishBusy === s.id ? 'Publicando…' : '📤 Publicar en web real'}
+              </button>
+              <button className="btn btn-ghost" title="Configurar conexión FTP" onClick={() => setShowPublish(s)}>
+                🌐
+              </button>
+            </div>
+
             <div className="row between">
               <a className="btn btn-ghost btn-sm" href={publicUrl(s.slug)} target="_blank" rel="noreferrer">
                 👁 Ver tienda pública
+              </a>
+              <a className="btn btn-ghost btn-sm" href={api.publishPreviewUrl(s.id)} target="_blank" rel="noreferrer">
+                📄 Vista web estática
               </a>
               <button className="btn btn-red btn-sm" onClick={() => remove(s)}>Eliminar</button>
             </div>
@@ -182,6 +209,15 @@ export default function Tiendas() {
           store={showFormat && showFormat !== 'global' ? showFormat : null}
           onSave={applyFormat}
           onClose={() => setShowFormat(null)}
+        />
+      )}
+
+      {showPublish && (
+        <PublishConfigModal
+          storeId={showPublish.id}
+          storeName={showPublish.name}
+          onClose={() => setShowPublish(null)}
+          onSaved={() => notify('Configuración FTP guardada')}
         />
       )}
 

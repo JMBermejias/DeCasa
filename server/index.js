@@ -419,6 +419,82 @@ app.post('/api/clicks', (req, res) => {
   res.json({ ok: true });
 });
 
+/* ===================== PUBLICACIÓN WEB (FTP) ===================== */
+
+import { publishToFtp, testFtpConnection, generateStoreHtml } from './publish.js';
+
+app.get('/api/stores/:id/publish-config', (req, res) => {
+  const cfg = getSetting('publish_' + req.params.id, {});
+  res.json({
+    host: cfg.host || '',
+    port: cfg.port || '21',
+    user: cfg.user || '',
+    password: cfg.password ? '••••••' : '',
+    remote_path: cfg.remote_path || '',
+    public_url: cfg.public_url || '',
+    secure: cfg.secure || 'none',
+    has_password: !!cfg.password
+  });
+});
+
+app.put('/api/stores/:id/publish-config', (req, res) => {
+  const { host, port, user, password, remote_path, public_url, secure } = req.body;
+  const current = getSetting('publish_' + req.params.id, {});
+  const updated = {
+    host: host ?? current.host,
+    port: port ?? current.port,
+    user: user ?? current.user,
+    password: (password && password !== '••••••') ? password : current.password,
+    remote_path: remote_path ?? current.remote_path,
+    public_url: public_url ?? current.public_url,
+    secure: secure ?? current.secure
+  };
+  setSetting('publish_' + req.params.id, updated);
+  res.json({ ok: true, message: 'Configuración FTP guardada' });
+});
+
+app.post('/api/stores/:id/publish-test', async (req, res) => {
+  const cfg = getSetting('publish_' + req.params.id, {});
+  if (!cfg.host) return res.status(400).json({ error: 'Configura los datos FTP primero' });
+  try {
+    const result = await testFtpConnection(cfg);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/stores/:id/publish', async (req, res) => {
+  const store = db.prepare('SELECT * FROM stores WHERE id = ?').get(req.params.id);
+  if (!store) return res.status(404).json({ error: 'Tienda no encontrada' });
+  const cfg = getSetting('publish_' + req.params.id, {});
+  if (!cfg.host) return res.status(400).json({ error: 'Configura los datos FTP primero' });
+
+  const products = db.prepare(
+    "SELECT * FROM products WHERE store_id = ? AND status = 'publicado' ORDER BY rating DESC, reviews_count DESC"
+  ).all(store.id);
+  const format = getSetting('store_format', {});
+
+  try {
+    const result = await publishToFtp(cfg, store, products, format);
+    db.prepare("UPDATE stores SET updated_at = datetime('now') WHERE id = ?").run(store.id);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/stores/:id/publish-preview', (req, res) => {
+  const store = db.prepare('SELECT * FROM stores WHERE id = ?').get(req.params.id);
+  if (!store) return res.status(404).json({ error: 'Tienda no encontrada' });
+  const products = db.prepare(
+    "SELECT * FROM products WHERE store_id = ? AND status = 'publicado' ORDER BY rating DESC, reviews_count DESC"
+  ).all(store.id);
+  const format = getSetting('store_format', {});
+  const html = generateStoreHtml(store, products, format);
+  res.type('html').send(html);
+});
+
 /* ===================== AJUSTES ===================== */
 
 app.get('/api/settings', (req, res) => {
