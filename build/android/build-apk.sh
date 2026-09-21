@@ -13,7 +13,7 @@ BT="$ANDROID_HOME/build-tools/34.0.0"
 PLATFORM="$ANDROID_HOME/platforms/android-34/android.jar"
 PATH="$JAVA_HOME/bin:$PATH"
 
-VERSION_NAME="1.1.0"
+VERSION_NAME="1.2.0"
 NODE_BIN="$(command -v node || echo "$HOME/.local/bin/node")"
 
 rm -rf "$OUT_DIR"
@@ -41,7 +41,7 @@ done < <(find "$OUT_DIR/compiled" -name '*.flat' -print0)
   --auto-add-overlay \
   --min-sdk-version 24 \
   --target-sdk-version 34 \
-  --version-code 3 \
+  --version-code 4 \
   --version-name "$VERSION_NAME" \
   "${FLATS[@]}"
 

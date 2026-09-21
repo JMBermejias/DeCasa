@@ -1,7 +1,7 @@
 {
   "name": "decasa-affiliate",
-  "version": "1.1.0",
-  "description": "DeCasa - Creador de tiendas online de afiliación de Amazon con ganancias recurrentes",
+  "version": "1.2.0",
+  "description": "DeCasa - Creador de tiendas online de afiliaci\u00f3n de Amazon con ganancias recurrentes",
   "main": "server/index.js",
   "scripts": {
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",

@@ -51,7 +51,7 @@ Aplicación para crear tiendas online de afiliación Amazon con ganancias recurr
 Descarga el paquete en la **release** de GitHub: https://github.com/JMBermejias/DeCasa/releases
 
 ```bash
-sudo dpkg -i decasa_1.1.0_amd64.deb
+sudo dpkg -i decasa_1.2.0_amd64.deb
 decasa          # abre la app en el navegador
 decasa start    # inicia el servidor
 decasa stop     # lo detiene

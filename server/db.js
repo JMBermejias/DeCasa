@@ -6,11 +6,63 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.DECASA_DATA_DIR || path.join(os.homedir(), '.local', 'share', 'decasa');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-export const db = new Database(path.join(dataDir, 'decasa.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+function ensureDataDir() {
+  try {
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    fs.accessSync(dataDir, fs.constants.W_OK);
+  } catch (err) {
+    console.error(`ERROR de arranque: no se puede usar el directorio de datos "${dataDir}".`);
+    console.error(`  Causa: ${err.message}`);
+    console.error('  Para usar otra ubicación: DECASA_DATA_DIR=/ruta/deseada <comando>');
+    process.exit(1);
+  }
+}
+
+// Las versiones anteriores a la 1.0.1 guardaban la base en /opt/decasa/server/data.
+// Si existe una base antigua y aún no hay una en la ubicación actual, se migra.
+function migrateLegacyData() {
+  const dbPath = path.join(dataDir, 'decasa.db');
+  if (fs.existsSync(dbPath)) return;
+  const legacyDirs = [
+    path.join(__dirname, 'data'),
+    '/opt/decasa/server/data',
+    path.join(os.homedir(), '.decasa')
+  ];
+  for (const dir of legacyDirs) {
+    const src = path.join(dir, 'decasa.db');
+    if (!fs.existsSync(src)) continue;
+    try {
+      fs.mkdirSync(dataDir, { recursive: true });
+      for (const ext of ['', '-wal', '-shm']) {
+        const s = src + ext;
+        if (fs.existsSync(s)) fs.copyFileSync(s, dbPath + ext);
+      }
+      console.log(`Datos migrados desde la versión antigua (${path.join(dir, 'decasa.db')}).`);
+    } catch (err) {
+      console.error(`ERROR: no se pudo migrar la base antigua desde ${src}.`);
+      console.error(`  Causa: ${err.message}`);
+      process.exit(1);
+    }
+    break;
+  }
+}
+
+ensureDataDir();
+migrateLegacyData();
+
+let db;
+try {
+  db = new Database(path.join(dataDir, 'decasa.db'));
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+} catch (err) {
+  console.error('ERROR de arranque: no se pudo abrir la base de datos.');
+  console.error(`  Ruta: ${path.join(dataDir, 'decasa.db')}`);
+  console.error(`  Causa: ${err.message}`);
+  console.error('  Si el archivo está dañado, renómbralo (p.ej. decasa.db.corrupto) o bórralo para empezar de cero.');
+  process.exit(1);
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS settings (
@@ -114,6 +166,8 @@ export function setSetting(key, value) {
     'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
   ).run(key, JSON.stringify(value));
 }
+
+export { db };
 
 export function seed() {
   const count = db.prepare('SELECT COUNT(*) AS c FROM settings').get().c;

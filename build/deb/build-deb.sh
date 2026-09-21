@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-VERSION="${VERSION:-1.1.0}"
+VERSION="${VERSION:-1.2.0}"
 PKG="decasa"
 ARCH="amd64"
 STAGE="$ROOT/dist/deb/${PKG}_${VERSION}_${ARCH}"
@@ -84,6 +84,18 @@ PID_FILE="$DECASA_DATA_DIR/decasa.pid"
 LOG_FILE="$DECASA_DATA_DIR/decasa.log"
 mkdir -p "$DECASA_DATA_DIR"
 
+[ -x "$RUNTIME" ] || RUNTIME="$(command -v node || true)"
+if [ -z "$RUNTIME" ]; then
+  echo "ERROR: no se encuentra el runtime de Node.js (/opt/decasa/runtime/node)." >&2
+  exit 1
+fi
+
+is_up() {
+  "$RUNTIME" -e "const http=require('http');const r=http.get('http://127.0.0.1:$PORT/api/health',res=>process.exit(res.statusCode===200?0:1));r.on('error',()=>process.exit(1));r.setTimeout(2000,()=>process.exit(1))" 2>/dev/null \
+    || { command -v curl >/dev/null 2>&1 && curl -sf "http://127.0.0.1:$PORT/api/health" >/dev/null 2>&1; } \
+    || { command -v wget >/dev/null 2>&1 && wget -qO- "http://127.0.0.1:$PORT/api/health" >/dev/null 2>&1; }
+}
+
 is_running() {
   [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
 }
@@ -91,33 +103,35 @@ is_running() {
 cmd="${1:-open}"
 case "$cmd" in
   start)
-    if is_running; then echo "DeCasa ya está en marcha (PID $(cat "$PID_FILE")) en http://localhost:$PORT"; exit 0; fi
+    if is_running || is_up; then echo "DeCasa ya está en marcha en http://localhost:$PORT"; exit 0; fi
+    rm -f "$PID_FILE"
     nohup "$RUNTIME" "$SERVER" >> "$LOG_FILE" 2>&1 &
-    echo $! > "$PID_FILE"
-    READY=0
+    NEW_PID=$!
+    echo "$NEW_PID" > "$PID_FILE"
     for _ in $(seq 1 40); do
-      if "$RUNTIME" -e "fetch('http://127.0.0.1:$PORT/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" 2>/dev/null; then
-        READY=1; break
-      fi
+      if is_up; then echo "DeCasa iniciado en http://localhost:$PORT"; exit 0; fi
       sleep 0.5
     done
-    if [ "$READY" = "0" ]; then
-      echo "ERROR: El servidor no arrancó. Revisa el log: $LOG_FILE" >&2
-      tail -5 "$LOG_FILE" >&2 2>/dev/null
-      rm -f "$PID_FILE"
-      exit 1
-    fi
-    echo "DeCasa iniciado en http://localhost:$PORT"
+    kill "$NEW_PID" 2>/dev/null || true
+    rm -f "$PID_FILE"
+    echo "ERROR: el servidor no arrancó. Revisa el log: $LOG_FILE" >&2
+    tail -15 "$LOG_FILE" >&2 2>/dev/null || true
+    exit 1
     ;;
   stop)
-    if is_running; then kill "$(cat "$PID_FILE")" 2>/dev/null; rm -f "$PID_FILE"; echo "DeCasa detenido"; else echo "DeCasa no está en marcha"; fi
+    if is_running; then kill "$(cat "$PID_FILE")" 2>/dev/null || true; rm -f "$PID_FILE"; echo "DeCasa detenido"; else rm -f "$PID_FILE" 2>/dev/null || true; echo "DeCasa no está en marcha"; fi
     ;;
   status)
-    if is_running; then echo "En marcha (PID $(cat "$PID_FILE")) en http://localhost:$PORT"; else echo "Detenido"; fi
+    if is_running; then echo "En marcha (PID $(cat "$PID_FILE")) en http://localhost:$PORT"
+    elif is_up; then echo "En marcha en http://localhost:$PORT (servidor vivo, PID desactualizado)"
+    else echo "Detenido"; fi
     ;;
   open|*)
-    "$0" start
-    command -v xdg-open >/dev/null 2>&1 && xdg-open "http://localhost:$PORT" >/dev/null 2>&1 || true
+    if "$0" start; then
+      command -v xdg-open >/dev/null 2>&1 && xdg-open "http://localhost:$PORT" >/dev/null 2>&1 || true
+    else
+      exit 1
+    fi
     ;;
 esac
 EOF
